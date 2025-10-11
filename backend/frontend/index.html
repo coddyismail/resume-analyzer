@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Smart Resume Analyzer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>📄 Smart Resume Analyzer</h1>
+    
+    <div class="file-input-wrapper">
+      <!-- Hidden file input -->
+      <input type="file" id="resumeFile" accept=".pdf,.docx,.txt">
+      
+      <!-- Label that acts as button -->
+      <label class="file-input-label" for="resumeFile">Choose Resume</label>
+      
+      <!-- File name display -->
+      <div class="file-name" id="fileName">No file chosen</div>
+    </div>
+    
+    <button onclick="uploadResume()">Analyze</button>
+
+    <div id="result"></div>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    // Show selected file name
+    const fileInput = document.getElementById('resumeFile');
+    const fileName = document.getElementById('fileName');
+    
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files.length > 0) {
+        fileName.textContent = fileInput.files[0].name;
+      } else {
+        fileName.textContent = "No file chosen";
+      }
+    });
+  </script>
+  <script src="script.js"></script>
+</body>
+</html>
