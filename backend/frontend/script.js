@@ -10,10 +10,11 @@ async function uploadResume() {
   let formData = new FormData();
   formData.append("file", file);
 
- const response = await fetch("https://resume-analyzer-29xv.onrender.com/", {
+ const response = await fetch("https://resume-analyzer-29xv.onrender.com/analyze", {
   method: "POST",
   body: formData
 });
+
 
   const result = await response.json();
 
