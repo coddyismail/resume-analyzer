@@ -1,4 +1,6 @@
 import re
+from .utils import clean_text, extract_emails, extract_phone_numbers, word_count
+
 
 def clean_text(text: str) -> str:
     text = text.lower()
