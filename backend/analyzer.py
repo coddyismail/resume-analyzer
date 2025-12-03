@@ -1,4 +1,5 @@
-from utils import clean_text, extract_emails, extract_phone_numbers, word_count
+from .utils import clean_text, extract_emails, extract_phone_numbers, word_count
+
 
 # Example skill keywords (expand as needed)
 SKILLS = [
