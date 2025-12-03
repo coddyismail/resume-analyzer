@@ -4,8 +4,8 @@ from .analyzer import analyze_resume
 from .parser import parse_resume
 import os
 
-app = Flask(__name__, static_folder="../frontend/build", static_url_path="/frontend")
-
+# Serve frontend folder correctly
+app = Flask(__name__, static_folder="../frontend", static_url_path="/frontend")
 CORS(app)
 
 # -------- API Route --------
@@ -23,11 +23,16 @@ def analyze():
     result = analyze_resume(text)
     return jsonify(result)
 
-# -------- Serve React frontend --------
+# -------- Serve frontend --------
 @app.route("/", defaults={"path": ""})
 @app.route("/<path:path>")
 def serve_frontend(path):
-    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+    """
+    Serve frontend files. If path exists in frontend folder, serve it.
+    Otherwise serve index.html for SPA fallback.
+    """
+    frontend_path = os.path.join(app.static_folder, path)
+    if path != "" and os.path.exists(frontend_path):
         return send_from_directory(app.static_folder, path)
     else:
         return send_from_directory(app.static_folder, "index.html")
