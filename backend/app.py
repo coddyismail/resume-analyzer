@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from .analyzer import analyze_resume
-from parser import parse_resume
+from .parser import parse_resume
 from flask_cors import CORS
 import os
 
