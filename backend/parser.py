@@ -1,10 +1,12 @@
 import pdfplumber
-import docx
+from docx import Document
+
 
 def parse_resume(file):
     filename = file.filename.lower()
     text = ""
 
+    # ---- PDF ----
     if filename.endswith(".pdf"):
         with pdfplumber.open(file) as pdf:
             for page in pdf.pages:
@@ -12,14 +14,18 @@ def parse_resume(file):
                 if page_text:
                     text += page_text + "\n"
 
+    # ---- DOCX ----
     elif filename.endswith(".docx"):
-        doc = docx.Document(file)
+        doc = Document(file)
         for para in doc.paragraphs:
-            text += para.text + "\n"
+            if para.text:
+                text += para.text + "\n"
 
+    # ---- TXT ----
     elif filename.endswith(".txt"):
         text = file.read().decode("utf-8", errors="ignore")
 
+    # ---- Unsupported Format ----
     else:
         text = ""
 
