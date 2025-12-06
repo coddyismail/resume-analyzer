@@ -1,30 +1,24 @@
-from .utils import clean_text, extract_emails, extract_phone_numbers, word_count
-
-
-# Example skill keywords (expand as needed)
-SKILLS = [
-    "python", "java", "c++", "flask", "django", "react", "node", "sql",
-    "machine learning", "deep learning", "data analysis", "aws", "docker"
-]
+# analyzer.py
+from utils import extract_emails, extract_phone_numbers, word_count
 
 def analyze_resume(text):
-    text_clean = clean_text(text)
+    emails = extract_emails(text)
+    phones = extract_phone_numbers(text)
+    words = word_count(text)
 
-    found_skills = [skill for skill in SKILLS if skill in text_clean]
-    score = (len(found_skills) / len(SKILLS)) * 100
+    score = 0
+    keywords = ["python", "javascript", "experience", "projects", "react", "node", "sql"]
 
-    result = {
-        "resume_length": word_count(text),
-        "emails": extract_emails(text),
-        "phone_numbers": extract_phone_numbers(text),
-        "skills_found": found_skills,
-        "ats_score": round(score, 2),
-        "suggestions": []
+    matched = [k for k in keywords if k in text]
+    missing = [k for k in keywords if k not in text]
+
+    score = len(matched) * 10
+
+    return {
+        "score": score,
+        "word_count": words,
+        "emails": emails,
+        "phones": phones,
+        "matched_keywords": matched,
+        "missing_keywords": missing,
     }
-
-    if score < 50:
-        result["suggestions"].append("Add more technical skills relevant to jobs.")
-    if word_count(text) < 200:
-        result["suggestions"].append("Expand resume with more details and achievements.")
-    
-    return result

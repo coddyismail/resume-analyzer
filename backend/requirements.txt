@@ -6,3 +6,4 @@ spacy
 PyPDF2
 nltk
 python-docx
+requests

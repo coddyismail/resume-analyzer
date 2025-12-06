@@ -1,43 +1,54 @@
-from flask import Flask, request, jsonify, send_from_directory
+# app.py
+from flask import Flask, request, jsonify
 from flask_cors import CORS
-from .analyzer import analyze_resume
-from .parser import parse_resume
-import os
+from analyzer import analyze_resume
+from parser import parse_resume
+from bot import send_message
 
-# Serve frontend folder correctly
-app = Flask(__name__, static_folder="../frontend", static_url_path="/frontend")
+app = Flask(__name__)
 CORS(app)
 
-# -------- API Route --------
+# ----------------------------
+#  RESUME ANALYZER ENDPOINT
+# ----------------------------
 @app.route("/analyze", methods=["POST"])
 def analyze():
-    if "file" not in request.files:
+    if 'file' not in request.files:
         return jsonify({"error": "No file uploaded"}), 400
 
     file = request.files["file"]
-    text = parse_resume(file)
+    parsed_text = parse_resume(file)
+    analysis = analyze_resume(parsed_text)
 
-    if not text or text.strip() == "":
-        return jsonify({"error": "Could not extract text from resume"}), 400
+    return jsonify({
+        "parsed_text": parsed_text,
+        "analysis": analysis
+    })
 
-    result = analyze_resume(text)
-    return jsonify(result)
 
-# -------- Serve frontend --------
-@app.route("/", defaults={"path": ""})
-@app.route("/<path:path>")
-def serve_frontend(path):
-    """
-    Serve frontend files. If path exists in frontend folder, serve it.
-    Otherwise serve index.html for SPA fallback.
-    """
-    frontend_path = os.path.join(app.static_folder, path)
-    if path != "" and os.path.exists(frontend_path):
-        return send_from_directory(app.static_folder, path)
-    else:
-        return send_from_directory(app.static_folder, "index.html")
+# ----------------------------
+#  TELEGRAM BOT WEBHOOK
+# ----------------------------
+@app.route("/api/bot", methods=["POST"])
+def telegram_webhook():
+    data = request.get_json()
 
-# -------- Run Flask --------
+    if "message" in data:
+        chat_id = data["message"]["chat"]["id"]
+        text = data["message"].get("text", "")
+
+        if text == "/start":
+            send_message(chat_id, "Welcome! Send your resume PDF.")
+        else:
+            send_message(chat_id, "Upload your resume PDF as a document.")
+
+    return jsonify({"ok": True})
+
+
+@app.route("/", methods=["GET"])
+def home():
+    return "Resume Analyzer Backend Running"
+
+
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=10000)
