@@ -1,8 +1,8 @@
 # app.py
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from analyzer import analyze_resume
-from parser import parse_resume
+from backend.analyzer import analyze_resume
+from backend.parser import parse_resume
 from bot import send_message
 
 app = Flask(__name__)
