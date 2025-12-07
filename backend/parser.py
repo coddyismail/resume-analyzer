@@ -1,14 +1,24 @@
 # parser.py
-import PyPDF2
-from utils import clean_text
+import pdfplumber
+from docx import Document
 
 def parse_resume(file):
-    reader = PyPDF2.PdfReader(file)
+    filename = file.filename.lower()
     text = ""
 
-    for page in reader.pages:
-        extracted = page.extract_text()
-        if extracted:
-            text += extracted + "\n"
+    if filename.endswith(".pdf"):
+        with pdfplumber.open(file) as pdf:
+            for page in pdf.pages:
+                page_text = page.extract_text()
+                if page_text:
+                    text += page_text + "\n"
 
-    return clean_text(text)
+    elif filename.endswith(".docx"):
+        doc = Document(file)
+        for para in doc.paragraphs:
+            text += para.text + "\n"
+
+    elif filename.endswith(".txt"):
+        text = file.read().decode("utf-8", errors="ignore")
+
+    return text.strip()
