@@ -1,7 +1,8 @@
 from flask import Flask, request, jsonify
 from backend.analyzer import analyze_resume
 from backend.parser import parse_resume
-from backend.bot import handle_update
+from backend.analyzer import analyze_resume
+
 from flask_cors import CORS
 import os
 
