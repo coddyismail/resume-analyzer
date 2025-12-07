@@ -1,54 +1,36 @@
-# bot.py
-import os
-import requests
-from backend.parser import parse_resume
+# app.py
+from flask import Flask, request, jsonify
 from backend.analyzer import analyze_resume
+from backend.parser import parse_resume
+from bot import handle_update
+from flask_cors import CORS
+import os
 
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-BASE_URL = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/"
+app = Flask(__name__)
+CORS(app)
 
-def send_message(chat_id, text):
-    url = BASE_URL + "sendMessage"
-    payload = {"chat_id": chat_id, "text": text}
-    requests.post(url, json=payload)
+@app.route("/analyze", methods=["POST"])
+def analyze():
+    if "file" not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
 
-def handle_update(update):
-    if "message" not in update:
-        return
+    file = request.files["file"]
+    text = parse_resume(file)
 
-    chat_id = update["message"]["chat"]["id"]
-    text = update["message"].get("text", "")
+    if not text or text.strip() == "":
+        return jsonify({"error": "Could not extract text from resume"}), 400
 
-    # Handle /start command
-    if text == "/start":
-        send_message(chat_id, "👋 Hello! Send me your resume (PDF, DOCX, TXT) and I'll analyze it.")
-        return
+    result = analyze_resume(text)
+    return jsonify(result)
 
-    # Check for document (resume) upload
-    if "document" in update["message"]:
-        file_id = update["message"]["document"]["file_id"]
+# ⭐ NEW ROUTE FOR TELEGRAM BOT ⭐
+@app.route("/api/bot", methods=["POST"])
+def telegram_webhook():
+    data = request.get_json()
+    if data:
+        handle_update(data)   # call your bot logic
+    return jsonify({"status": "ok"})
 
-        # 1️⃣ Get file path
-        file_info = requests.get(BASE_URL + "getFile", params={"file_id": file_id}).json()
-        file_path = file_info["result"]["file_path"]
-
-        # 2️⃣ Download file
-        file_url = f"https://api.telegram.org/file/bot{TELEGRAM_BOT_TOKEN}/{file_path}"
-        response = requests.get(file_url)
-        file_bytes = response.content
-
-        # 3️⃣ Use parser.py
-        from io import BytesIO
-        resume_file = BytesIO(file_bytes)
-        resume_file.filename = update["message"]["document"]["file_name"]
-        text = parse_resume(resume_file)
-
-        # 4️⃣ Analyze
-        result = analyze_resume(text)
-
-        # 5️⃣ Send result back
-        send_message(chat_id, f"✅ Resume analysis complete:\n{result}")
-        return
-
-    # Default response
-    send_message(chat_id, "❌ Please send a resume file (PDF, DOCX, TXT).")
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
