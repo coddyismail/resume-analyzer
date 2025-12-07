@@ -1,8 +1,7 @@
-# app.py
 from flask import Flask, request, jsonify
 from backend.analyzer import analyze_resume
 from backend.parser import parse_resume
-from bot import handle_update
+from backend.bot import handle_update
 from flask_cors import CORS
 import os
 
@@ -23,13 +22,17 @@ def analyze():
     result = analyze_resume(text)
     return jsonify(result)
 
-# ⭐ NEW ROUTE FOR TELEGRAM BOT ⭐
+
+# ⭐ THIS IS THE MOST IMPORTANT PART ⭐
 @app.route("/api/bot", methods=["POST"])
 def telegram_webhook():
     data = request.get_json()
+
     if data:
-        handle_update(data)   # call your bot logic
-    return jsonify({"status": "ok"})
+        handle_update(data)
+
+    return jsonify({"status": "ok"}), 200   # MUST return 200
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
