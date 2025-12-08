@@ -10,7 +10,11 @@ BASE_URL = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/"
 
 def send_message(chat_id, text):
     url = BASE_URL + "sendMessage"
-    payload = {"chat_id": chat_id, "text": text}
+    payload = {
+        "chat_id": chat_id,
+        "text": text,
+        "parse_mode": "Markdown"
+    }
     requests.post(url, json=payload)
 
 
@@ -26,12 +30,28 @@ def handle_update(update):
         send_message(chat_id, "👋 Send your resume (PDF, DOCX, TXT). I'll analyze it.")
         return
 
-    # ---- Handle File Upload ----
+    # ---- File Upload ----
     if "document" in message:
+
+        # ❗ Reject forwarded protected files
+        if message.get("forward_origin") or message.get("forward_from"):
+            send_message(chat_id,
+                         "❌ I cannot analyze forwarded files.\nPlease upload the resume directly.")
+            return
+
         file_id = message["document"]["file_id"]
 
-        # 1️⃣ Get file info
-        file_info = requests.get(BASE_URL + "getFile", params={"file_id": file_id}).json()
+        # 1️⃣ Get file info safely
+        file_info = requests.get(
+            BASE_URL + "getFile",
+            params={"file_id": file_id}
+        ).json()
+
+        if not file_info.get("ok"):
+            send_message(chat_id,
+                         "❌ Cannot download this file.\nIt may be protected or forwarded from another bot.")
+            return
+
         file_path = file_info["result"]["file_path"]
 
         # 2️⃣ Download file
@@ -44,11 +64,31 @@ def handle_update(update):
         # 3️⃣ Extract text
         text = parse_resume(resume_file)
 
-        # 4️⃣ Analyze
+        # 4️⃣ Analyze text
         result = analyze_resume(text)
 
-        # 5️⃣ Send result
-        send_message(chat_id, "✅ Resume Analysis Complete:\n\n" + str(result))
+        # 5️⃣ Format output
+        formatted = f"""
+📄 *Resume Analysis Report*
+
+⭐ *ATS Score:* {result['ats_score']}%
+
+🧩 *Skills Found:*
+{", ".join(result['skills']) if result['skills'] else "None"}
+
+📝 *Resume Length:* {result['word_count']} words
+
+📧 *Email(s):*
+{", ".join(result['emails']) if result['emails'] else "Not found"}
+
+📞 *Phone(s):*
+{", ".join(result['phones']) if result['phones'] else "Not found"}
+
+💡 *Suggestions:*
+{chr(10).join("✓ " + s for s in result['suggestions'])}
+"""
+
+        send_message(chat_id, formatted)
         return
 
     # Default fallback
