@@ -24,56 +24,63 @@ def handle_update(update):
 
     message = update["message"]
     chat_id = message["chat"]["id"]
-    
 
     # ---- Handle /start ----
     if "text" in message and message["text"] == "/start":
-        user_first = message["from"]["first_name"]
+        user_first = message["from"].get("first_name", "")
         user_username = message["from"].get("username")
-        # prefer @username, else fallback 
+
+        # Prefer @username → else first name
         name = f"@{user_username}" if user_username else user_first
-        
-        send_message(chat_id,  f"👋 Hi {name}!\n\nSend your resume (PDF, DOCX, TXT).\nI'll analyze it instantly.")
+
+        send_message(
+            chat_id,
+            f"👋 Hi {name}!\n\nSend your resume (PDF, DOCX, TXT).\nI'll analyze it instantly."
+        )
         return
 
     # ---- File Upload ----
     if "document" in message:
 
-        # ❗ Reject forwarded protected files
+        # Reject forwarded or protected files
         if message.get("forward_origin") or message.get("forward_from"):
-            send_message(chat_id,
-                         "❌ I cannot analyze forwarded files.\nPlease upload the resume directly.")
+            send_message(
+                chat_id,
+                "❌ I cannot analyze forwarded files.\nPlease upload the resume directly."
+            )
             return
 
         file_id = message["document"]["file_id"]
 
-        # 1️⃣ Get file info safely
+        # Get file info
         file_info = requests.get(
             BASE_URL + "getFile",
             params={"file_id": file_id}
         ).json()
 
         if not file_info.get("ok"):
-            send_message(chat_id,
-                         "❌ Cannot download this file.\nIt may be protected or forwarded from another bot.")
+            send_message(
+                chat_id,
+                "❌ Cannot download this file.\nIt may be protected or forwarded from another bot."
+            )
             return
 
         file_path = file_info["result"]["file_path"]
 
-        # 2️⃣ Download file
+        # Download file
         file_url = f"https://api.telegram.org/file/bot{TELEGRAM_BOT_TOKEN}/{file_path}"
         file_bytes = requests.get(file_url).content
 
         resume_file = BytesIO(file_bytes)
         resume_file.filename = message["document"]["file_name"]
 
-        # 3️⃣ Extract text
+        # Extract text
         text = parse_resume(resume_file)
 
-        # 4️⃣ Analyze text
+        # Analyze
         result = analyze_resume(text)
 
-        # 5️⃣ Format output
+        # Format response
         formatted = f"""
 📄 *Resume Analysis Report*
 
