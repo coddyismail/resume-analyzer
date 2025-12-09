@@ -24,10 +24,16 @@ def handle_update(update):
 
     message = update["message"]
     chat_id = message["chat"]["id"]
+    
 
     # ---- Handle /start ----
     if "text" in message and message["text"] == "/start":
-        send_message(chat_id, "👋 Send your resume (PDF, DOCX, TXT). I'll analyze it.")
+        user_first = message["from"]["first_name"]
+        user_username = message["from"].get("username")
+        # prefer @username, else fallback 
+        name = f"@{user_username}" if user_username else user_first
+        
+        send_message(chat_id,  f"👋 Hi {name}!\n\nSend your resume (PDF, DOCX, TXT).\nI'll analyze it instantly.")
         return
 
     # ---- File Upload ----
