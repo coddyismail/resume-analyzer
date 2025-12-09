@@ -99,6 +99,7 @@ def handle_update(update):
 
 💡 *Suggestions:*
 {chr(10).join("✓ " + s for s in result['suggestions'])}
+check out our 8d audio bot at @eightdaudio_bot
 """
 
         send_message(chat_id, formatted)
